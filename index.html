@@ -2,59 +2,87 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Región Solución de Desigualdades</title>
+  <title>Graficador de Desigualdades</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.4/math.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 30px; background: #fefefe; }
+    input { width: 300px; padding: 5px; margin-bottom: 10px; }
+    button { padding: 10px; background-color: teal; color: white; border: none; cursor: pointer; }
+  </style>
 </head>
 <body>
-  <h2 style="color:teal;">Solución gráfica de desigualdades con dos variables</h2>
-  <div id="grafica" style="width: 90%; height: 600px;"></div>
+  <h2 style="color: teal;">Graficar desigualdades con dos variables</h2>
+  <p>Ejemplo: <code>y &lt;= -x + 6</code> y <code>y &gt;= x - 4</code></p>
+  <input id="ineq1" placeholder="Desigualdad 1" value="y <= -x + 6"><br>
+  <input id="ineq2" placeholder="Desigualdad 2" value="y >= x - 4"><br>
+  <button onclick="graficar()">Graficar región solución</button>
+  <div id="grafica" style="width:100%; height:600px;"></div>
 
   <script>
-    // Rango de valores para x
-    const x = [];
-    for (let i = -5; i <= 10; i += 0.1) x.push(i);
+    function graficar() {
+      const ineq1 = document.getElementById("ineq1").value;
+      const ineq2 = document.getElementById("ineq2").value;
 
-    // Desigualdades
-    const y1 = x.map(x => -x + 6);  // y ≤ -x + 6
-    const y2 = x.map(x => x - 4);   // y ≥ x - 4
-    const yMin = x.map(() => -10); // piso mínimo
-    const yMax = x.map(() => 10);  // techo máximo
+      const x = [];
+      for (let i = -10; i <= 10; i += 0.2) x.push(i);
 
-    // Región solución: intersección de desigualdades
-    const yFill = x.map((xi, i) => Math.min(y1[i], yMax[i]));
-    const yBase = x.map((xi, i) => Math.max(y2[i], yMin[i]));
+      let y1 = [];
+      let y2 = [];
+      try {
+        const expr1 = ineq1.replace(/<=|≥/g, "<=").replace(/>=|≤/g, ">=");
+        const expr2 = ineq2.replace(/<=|≥/g, "<=").replace(/>=|≤/g, ">=");
 
-    const region = {
-      x: [...x, ...x.reverse()],
-      y: [...yFill, ...yBase.reverse()],
-      fill: 'toself',
-      fillcolor: 'rgba(255, 192, 203, 0.6)', // Rosa
-      line: { color: 'purple' }, // Borde morado
-      type: 'scatter',
-      mode: 'lines',
-      name: 'Región Solución'
-    };
+        const getFunc = (ineq, fallback) => {
+          const side = ineq.split(/<=|>=|<|>/);
+          const op = ineq.match(/<=|>=|<|>/)[0];
+          const isYLeft = side[0].includes('y');
+          const expr = isYLeft ? side[1] : side[0];
+          return x.map(val => math.evaluate(expr, { x: val }));
+        };
 
-    const borde1 = {
-      x: x, y: y1,
-      type: 'scatter', mode: 'lines',
-      line: { color: 'purple', dash: 'dash' },
-      name: 'y ≤ -x + 6'
-    };
+        y1 = getFunc(expr1, []);
+        y2 = getFunc(expr2, []);
 
-    const borde2 = {
-      x: x, y: y2,
-      type: 'scatter', mode: 'lines',
-      line: { color: 'turquoise', dash: 'dash' },
-      name: 'y ≥ x - 4'
-    };
+        const yFill = x.map((_, i) => Math.min(y1[i], y2[i]));
+        const yBase = x.map((_, i) => Math.max(y1[i], y2[i]));
 
-    Plotly.newPlot('grafica', [region, borde1, borde2], {
-      title: 'Sistema de desigualdades',
-      xaxis: { title: 'x', zeroline: true, gridcolor: 'lightgray' },
-      yaxis: { title: 'y', zeroline: true, gridcolor: 'lightgray' },
-      plot_bgcolor: 'white'
-    });
+        const region = {
+          x: [...x, ...x.reverse()],
+          y: [...yFill, ...yBase.reverse()],
+          fill: 'toself',
+          fillcolor: 'rgba(255, 182, 193, 0.6)', // rosa
+          line: { color: 'purple' },
+          type: 'scatter',
+          mode: 'lines',
+          name: 'Región Solución'
+        };
+
+        const borde1 = {
+          x: x, y: y1,
+          type: 'scatter', mode: 'lines',
+          line: { color: 'purple', dash: 'dash' },
+          name: 'Desigualdad 1'
+        };
+
+        const borde2 = {
+          x: x, y: y2,
+          type: 'scatter', mode: 'lines',
+          line: { color: 'turquoise', dash: 'dash' },
+          name: 'Desigualdad 2'
+        };
+
+        Plotly.newPlot('grafica', [region, borde1, borde2], {
+          title: 'Región de solución',
+          xaxis: { title: 'x' },
+          yaxis: { title: 'y' },
+          plot_bgcolor: 'white'
+        });
+
+      } catch (e) {
+        alert("Error al interpretar desigualdades. Usa solo x, y y operadores como <= >= < >.");
+      }
+    }
   </script>
 </body>
 </html>
