@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Graficador de Desigualdades con Colores Personalizados</title>
+  <title>Graficador de Desigualdades con Ejes Numerados</title>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <style>
     body {
@@ -47,14 +46,25 @@
 
   <script>
     function parseDesigualdad(expr) {
-      expr = expr.replace(/\s/g, '');
-      const regex = /y([<>]=?)(-?\d+(\.\d+)?)[\*]x([+-]\d+(\.\d+)?)/;
+      expr = expr.replace(/\s+/g, ''); // quitar espacios
+
+      const regex = /^y([<>]=?)(.*)$/;
       const match = expr.match(regex);
       if (!match) return null;
+
+      const op = match[1];
+      const exprRight = match[2];
+
       return {
-        op: match[1],
-        m: parseFloat(match[2]),
-        b: parseFloat(match[4])
+        op: op,
+        eval: (x) => {
+          try {
+            return eval(exprRight.replace(/x/g, `(${x})`));
+          } catch (e) {
+            return NaN;
+          }
+        },
+        raw: expr
       };
     }
 
@@ -76,8 +86,8 @@
 
       for (let i = -10; i <= 10; i += 0.2) {
         x.push(i);
-        y1.push(ineq1.m * i + ineq1.b);
-        y2.push(ineq2.m * i + ineq2.b);
+        y1.push(ineq1.eval(i));
+        y2.push(ineq2.eval(i));
       }
 
       const yZona = x.map((_, i) => Math.min(y1[i], y2[i]));
