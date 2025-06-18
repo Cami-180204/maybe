@@ -1,141 +1,42 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Graficador de Desigualdades con Ejes Numerados</title>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <title>Graficador de Desigualdades</title>
+  <script src="https://www.desmos.com/api/v1.6/calculator.js?apiKey=YOUR_API_KEY"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #f4f4f4;
-      padding: 20px;
-    }
-    input {
-      padding: 10px;
-      margin: 10px;
-      width: 250px;
-      font-size: 16px;
-    }
-    button {
-      padding: 10px 25px;
-      background-color: #6200ee;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    #plot {
+    #calculator {
       width: 100%;
-      height: 600px;
-      margin-top: 30px;
+      height: 500px;
+    }
+    input, button {
+      font-size: 16px;
+      margin: 10px 0;
     }
   </style>
 </head>
 <body>
 
-  <h2>Graficador de Desigualdades con Ejes Numerados</h2>
+  <h2>Graficador de Desigualdades con Dos Variables</h2>
+  <label for="inequality">Ingresa una desigualdad (ejemplo: y &lt;= -x + 5):</label><br>
+  <input type="text" id="inequality" placeholder="y <= -x + 5" size="30">
+  <button onclick="graficar()">Graficar</button>
 
-  <input id="ineq1" placeholder="Ej: y <= 7 - 2*x">
-  <input id="ineq2" placeholder="Ej: y <= 9 - 3*x">
-  <br>
-  <button onclick="graficar()">Graficar región de solución</button>
-
-  <div id="plot"></div>
+  <div id="calculator"></div>
 
   <script>
-    function parseDesigualdad(expr) {
-      expr = expr.replace(/\s+/g, ''); // quitar espacios
+    // Crear el graficador Desmos
+    const elt = document.getElementById('calculator');
+    const calculator = Desmos.GraphingCalculator(elt, {
+      expressions: true,
+      settingsMenu: false
+    });
 
-      const regex = /^y([<>]=?)(.*)$/;
-      const match = expr.match(regex);
-      if (!match) return null;
-
-      const op = match[1];
-      const exprRight = match[2];
-
-      return {
-        op: op,
-        eval: (x) => {
-          try {
-            return eval(exprRight.replace(/x/g, `(${x})`));
-          } catch (e) {
-            return NaN;
-          }
-        },
-        raw: expr
-      };
-    }
-
+    // Función para graficar la desigualdad
     function graficar() {
-      const entrada1 = document.getElementById("ineq1").value;
-      const entrada2 = document.getElementById("ineq2").value;
-
-      const ineq1 = parseDesigualdad(entrada1);
-      const ineq2 = parseDesigualdad(entrada2);
-
-      if (!ineq1 || !ineq2) {
-        alert("Por favor escribe desigualdades como: y <= 7 - 2*x");
-        return;
-      }
-
-      const x = [];
-      const y1 = [], y2 = [];
-      const ymin = -10, ymax = 30;
-
-      for (let i = -10; i <= 10; i += 0.2) {
-        x.push(i);
-        y1.push(ineq1.eval(i));
-        y2.push(ineq2.eval(i));
-      }
-
-      const yZona = x.map((_, i) => Math.min(y1[i], y2[i]));
-
-      const zonaSolucion = {
-        x: [...x, ...x.slice().reverse()],
-        y: [...yZona, ...Array.from(x).fill(ymin).reverse()],
-        fill: 'toself',
-        fillcolor: 'orange',
-        line: { color: 'transparent' },
-        type: 'scatter',
-        name: 'Región solución'
-      };
-
-      const zonaNoSolucion = {
-        x: [...x, ...x.slice().reverse()],
-        y: [...Array.from(x).fill(ymax), ...yZona.reverse()],
-        fill: 'toself',
-        fillcolor: 'coral',
-        line: { color: 'transparent' },
-        type: 'scatter',
-        name: 'Fuera de la solución'
-      };
-
-      const linea1 = {
-        x: x,
-        y: y1,
-        mode: 'lines',
-        name: entrada1,
-        line: { color: 'green', width: 2 }
-      };
-
-      const linea2 = {
-        x: x,
-        y: y2,
-        mode: 'lines',
-        name: entrada2,
-        line: { color: 'purple', width: 2 }
-      };
-
-      const layout = {
-        title: 'Zona factible entre dos desigualdades',
-        xaxis: { range: [-10, 10], showgrid: true, zeroline: true, tickmode: 'linear', dtick: 1 },
-        yaxis: { range: [ymin, ymax], showgrid: true, zeroline: true, tickmode: 'linear', dtick: 1 },
-        showlegend: true
-      };
-
-      Plotly.newPlot('plot', [zonaNoSolucion, zonaSolucion, linea1, linea2], layout);
+      const expr = document.getElementById('inequality').value;
+      calculator.setExpressions([]);
+      calculator.setExpression({ id: 'inequality1', latex: expr });
     }
   </script>
 
