@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Región Solución de Desigualdades</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <h2 style="color:teal;">Solución gráfica de desigualdades con dos variables</h2>
+  <div id="grafica" style="width: 90%; height: 600px;"></div>
+
+  <script>
+    // Rango de valores para x
+    const x = [];
+    for (let i = -5; i <= 10; i += 0.1) x.push(i);
+
+    // Desigualdades
+    const y1 = x.map(x => -x + 6);  // y ≤ -x + 6
+    const y2 = x.map(x => x - 4);   // y ≥ x - 4
+    const yMin = x.map(() => -10); // piso mínimo
+    const yMax = x.map(() => 10);  // techo máximo
+
+    // Región solución: intersección de desigualdades
+    const yFill = x.map((xi, i) => Math.min(y1[i], yMax[i]));
+    const yBase = x.map((xi, i) => Math.max(y2[i], yMin[i]));
+
+    const region = {
+      x: [...x, ...x.reverse()],
+      y: [...yFill, ...yBase.reverse()],
+      fill: 'toself',
+      fillcolor: 'rgba(255, 192, 203, 0.6)', // Rosa
+      line: { color: 'purple' }, // Borde morado
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Región Solución'
+    };
+
+    const borde1 = {
+      x: x, y: y1,
+      type: 'scatter', mode: 'lines',
+      line: { color: 'purple', dash: 'dash' },
+      name: 'y ≤ -x + 6'
+    };
+
+    const borde2 = {
+      x: x, y: y2,
+      type: 'scatter', mode: 'lines',
+      line: { color: 'turquoise', dash: 'dash' },
+      name: 'y ≥ x - 4'
+    };
+
+    Plotly.newPlot('grafica', [region, borde1, borde2], {
+      title: 'Sistema de desigualdades',
+      xaxis: { title: 'x', zeroline: true, gridcolor: 'lightgray' },
+      yaxis: { title: 'y', zeroline: true, gridcolor: 'lightgray' },
+      plot_bgcolor: 'white'
+    });
+  </script>
+</body>
+</html>
