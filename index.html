@@ -1,3 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Graficador con Ejes Numerados</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f7f7f7;
+    }
+
+    h2 {
+      margin-top: 20px;
+    }
+
+    .inputs {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 20px;
+    }
+
+    input {
+      padding: 8px;
+      font-size: 16px;
+      width: 250px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #663399;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    canvas {
+      border: 1px solid #ccc;
+      background: white;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Graficador de Desigualdades con Ejes Numerados</h2>
+
+<div class="inputs">
+  <input type="text" id="ineq1" placeholder="Desigualdad 1 (ej: y<=2*x+5)">
+  <input type="text" id="ineq2" placeholder="Desigualdad 2 (opcional)">
+</div>
+
+<button onclick="graficar()">Graficar región de solución</button>
+
+<canvas id="canvas" width="600" height="600"></canvas>
+<p><strong>Región de solución factible</strong></p>
+
 <script>
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
@@ -14,6 +74,7 @@
     // Cuadrícula
     ctx.strokeStyle = "#eee";
     ctx.lineWidth = 1;
+
     for (let i = 0; i <= width / scale; i++) {
       const x = i * scale;
       ctx.beginPath();
@@ -34,62 +95,41 @@
     ctx.strokeStyle = "#000";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(0, origin.y);
+    ctx.moveTo(0, origin.y); // eje X
     ctx.lineTo(width, origin.y);
-    ctx.moveTo(origin.x, 0);
+    ctx.moveTo(origin.x, 0); // eje Y
     ctx.lineTo(origin.x, height);
     ctx.stroke();
 
-    // Números
+    // Números en los ejes
     ctx.fillStyle = "#000";
     ctx.font = "12px Arial";
     for (let i = -Math.floor(origin.x / scale); i <= Math.floor((width - origin.x) / scale); i++) {
-      if (i !== 0) ctx.fillText(i, origin.x + i * scale - 5, origin.y + 15);
+      if (i !== 0) {
+        ctx.fillText(i, origin.x + i * scale - 5, origin.y + 15);
+      }
     }
+
     for (let i = -Math.floor(origin.y / scale); i <= Math.floor((height - origin.y) / scale); i++) {
-      if (i !== 0) ctx.fillText(-i, origin.x + 5, origin.y + i * scale + 3);
+      if (i !== 0) {
+        ctx.fillText(-i, origin.x + 5, origin.y + i * scale + 3);
+      }
     }
   }
 
-  function evaluar(expresion, x) {
+  function evaluar(expr, x) {
     try {
-      const f = new Function("x", `return ${expresion}`);
-      return f(x);
+      return Function("x", "return " + expr)(x);
     } catch {
       return NaN;
     }
   }
 
-  function sombrearRegionDoble(expr1, op1, expr2, op2) {
-    for (let x = -origin.x / scale; x <= (width - origin.x) / scale; x += 0.1) {
-      const yA = evaluar(expr1, x);
-      const yB = evaluar(expr2, x);
-
-      if (!isNaN(yA) && !isNaN(yB)) {
-        const px = origin.x + x * scale;
-        const ymin = Math.min(yA, yB);
-        const ymax = Math.max(yA, yB);
-
-        const pyMin = origin.y - ymin * scale;
-        const pyMax = origin.y - ymax * scale;
-
-        ctx.fillStyle = "orange";
-        if (op1.includes("<") && op2.includes("<")) {
-          ctx.fillRect(px, pyMin, 1, height - pyMin);
-        } else if (op1.includes(">") && op2.includes(">")) {
-          ctx.fillRect(px, 0, 1, pyMax);
-        } else {
-          ctx.fillRect(px, pyMax, 1, pyMin - pyMax);
-        }
-      }
-    }
-  }
-
-  function graficarLinea(expr, color = "purple") {
+  function graficarLinea(expr, color) {
     ctx.beginPath();
     ctx.strokeStyle = color;
     let started = false;
-    for (let x = -origin.x / scale; x <= (width - origin.x) / scale; x += 0.1) {
+    for (let x = -7.5; x <= 7.5; x += 0.1) {
       const y = evaluar(expr, x);
       if (!isNaN(y)) {
         const px = origin.x + x * scale;
@@ -105,17 +145,53 @@
     ctx.stroke();
   }
 
+  function sombrear(expr, tipo, color) {
+    for (let x = -7.5; x <= 7.5; x += 0.1) {
+      const y = evaluar(expr, x);
+      if (!isNaN(y)) {
+        const px = origin.x + x * scale;
+        const py = origin.y - y * scale;
+        ctx.fillStyle = color;
+        if (tipo.includes("<")) {
+          ctx.fillRect(px, py, 1, height - py);
+        } else {
+          ctx.fillRect(px, 0, 1, py);
+        }
+      }
+    }
+  }
+
+  function sombrearInterseccion(expr1, tipo1, expr2, tipo2) {
+    for (let x = -7.5; x <= 7.5; x += 0.1) {
+      const y1 = evaluar(expr1, x);
+      const y2 = evaluar(expr2, x);
+      if (!isNaN(y1) && !isNaN(y2)) {
+        const px = origin.x + x * scale;
+        let yMin, yMax;
+        if (tipo1.includes("<") && tipo2.includes("<")) {
+          yMin = Math.min(y1, y2);
+          ctx.fillStyle = "orange";
+          ctx.fillRect(px, origin.y - yMin * scale, 1, height - (origin.y - yMin * scale));
+        } else if (tipo1.includes(">") && tipo2.includes(">")) {
+          yMax = Math.max(y1, y2);
+          ctx.fillStyle = "orange";
+          ctx.fillRect(px, 0, 1, origin.y - yMax * scale);
+        }
+      }
+    }
+  }
+
   function graficar() {
     limpiarCanvas();
 
-    const raw1 = document.getElementById("ineq1").value.trim();
-    const raw2 = document.getElementById("ineq2").value.trim();
+    const input1 = document.getElementById("ineq1").value.trim();
+    const input2 = document.getElementById("ineq2").value.trim();
 
-    const match1 = raw1.match(/y\s*([<>]=?)\s*(.+)/);
-    const match2 = raw2.match(/y\s*([<>]=?)\s*(.+)/);
+    const match1 = input1.match(/y\s*([<>]=?)\s*(.+)/);
+    const match2 = input2.match(/y\s*([<>]=?)\s*(.+)/);
 
     if (!match1) {
-      alert("La primera desigualdad no tiene el formato correcto.");
+      alert("La desigualdad 1 no tiene el formato correcto.");
       return;
     }
 
@@ -125,31 +201,17 @@
     if (match2) {
       const op2 = match2[1];
       const expr2 = match2[2];
-
-      // Sombrear intersección
-      sombrearRegionDoble(expr1, op1, expr2, op2);
-
-      // Dibujar líneas
+      sombrearInterseccion(expr1, op1, expr2, op2);
       graficarLinea(expr1, "green");
       graficarLinea(expr2, "purple");
     } else {
-      // Solo una desigualdad
-      for (let x = -origin.x / scale; x <= (width - origin.x) / scale; x += 0.1) {
-        const y = evaluar(expr1, x);
-        if (!isNaN(y)) {
-          const px = origin.x + x * scale;
-          const py = origin.y - y * scale;
-          ctx.fillStyle = op1.includes("<") ? "orange" : "coral";
-          if (op1.includes("<")) {
-            ctx.fillRect(px, py, 1, height - py);
-          } else {
-            ctx.fillRect(px, 0, 1, py);
-          }
-        }
-      }
+      sombrear(expr1, op1, "coral");
       graficarLinea(expr1, "green");
     }
   }
 
   limpiarCanvas();
 </script>
+
+</body>
+</html>
